@@ -1,0 +1,10 @@
+apps:
+  - script : ./app.js
+    name   : 'sage-app'
+    instances: 1
+    exec_mode: fork
+  - script   : ./web.js
+    name     : 'sage-web'
+    instances: 1
+    exec_mode: cluster
+    watch: true

@@ -1,0 +1,46 @@
+<%- include header.html %>
+
+<p>We received <%= count %> telegrams so far.</p>
+
+<table class="table table-sm">
+  <thead class="thead-dark">
+    <tr>
+      <th>Timestamp</th>
+      <th>Telegram</th>
+      <th>Decrypted data</th>
+      <th>Encrypted data</th>
+    </tr>
+  </thead>
+<% for(var i=0; i < telegrams.length; i++) { %>
+   <tr>
+     <td>
+       <%= moment(telegrams[i].timestamp).format("YYYY-MM-DD HH:mm:ss") %>
+     </td>
+     <td>
+       <% if (telegrams[i].parsedData) { %>
+         <ul>
+           <% Object.keys(telegrams[i].parsedData.objects).forEach(function(obj) { %>
+             <li><%= obj %>: <%= telegrams[i].parsedData.objects[obj] %></li>
+             <% }) %>
+           </ul>
+           <% } else { %>
+             <i>Not parsed yet</i>
+             <% } %>
+           </td>
+     <td>
+       <% if (telegrams[i].decryptedData) { %>
+       <pre class="decrypted"><%= telegrams[i].decryptedData -%></pre>
+       <% } else { %>
+         <i>Encrypted data</i>
+       <% } %>
+     </td>
+     <td>
+       <pre class="encrypted"><%= voca.wordWrap(telegrams[i].hexData, { width: 80, cut: true }) -%></pre>
+       <br />
+        (<%= telegrams[i].hexSize / 2 %> bytes)
+     </td>
+   </tr>
+<% } %>
+</table>
+
+<%- include footer.html %>

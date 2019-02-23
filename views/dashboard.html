@@ -1,0 +1,33 @@
+<% include header.html %>
+
+<div class="row">
+  <div class="col-lg-4 col-md-12">
+
+  <h2>Most recent telegrams</h2>
+  <a href ="/telegrams">Last telegrams</a>
+
+  <% if (telegrams[0]) { %>
+
+  <p>Last telegram recieved: <%= moment(telegrams[0].timestamp).format("YYYY-MM-DD HH:mm:ss") %></p>
+
+  <pre class="decrypted">
+    <%= telegrams[0].decryptedData -%>
+  </pre>
+
+  <% } else { %>
+
+  <p>No data received yet. Please try again later.</p>
+
+  <% } %>
+
+</div>
+
+<div class="col-lg-4 col-md-12">
+  <% include graph1.html %>
+</div>
+
+<div class="col-lg-4 col-md-12">
+  <% include graph2.html %>
+</div>
+
+<% include footer.html %>

@@ -1,0 +1,69 @@
+<div id="graph2" ></div>
+
+<script>
+
+  Highcharts.chart('graph2', {
+  chart: {
+    type: 'column',
+  },
+  position: {
+    spacingLeft: 0,
+    marginRight: 0
+  },
+  style: {
+    width: '100%'
+  },
+  title: {
+    text: 'Daily power consumption'
+  },
+  subtitle: {
+    text: 'calculated manually'
+  },
+  xAxis: {
+    crosshair: true,
+    type: 'datetime',
+    dateTimeLabelFormats: { // don't display the dummy year
+      month: '%e / %b',
+      year: '%b'
+    },
+    title: {
+      text: 'Day'
+    },
+    minTickInterval: 24 * 3600 * 1000
+  },
+  yAxis: {
+    title: {
+      text: 'in kWh'
+    },
+    min: 0
+  },
+  tooltip: {
+    headerFormat: '<span style="font-size:10px">{point.key}</span><table>',
+    pointFormat: '<tr><td style="color:{series.color};padding:0">{series.name}: </td>' +
+      '<td style="padding:0"><b>{point.y:.1f}</b></td></tr>',
+    footerFormat: '</table>',
+    shared: true,
+    useHTML: true
+  },
+  plotOptions: {
+    column: {
+      pointPadding: 0,
+      borderWidth: 0,
+      groupPadding: 0,
+      shadow: false
+    }
+  },
+  series: [{
+    name: 'Daily power consumption',
+    data: <%= series2 %>
+  }],
+  func: function(chart) {
+    $timeout(function() {
+      graph.reflow();
+      //The below is an event that will trigger all instances of charts to reflow
+      //$scope.$broadcast('highchartsng.reflow');
+    }, 0)
+  }
+});
+
+</script>

@@ -1,0 +1,64 @@
+<div id="graph1" ></div>
+
+<script>
+
+  Highcharts.chart('graph1', {
+  chart: {
+    type: 'column',
+  },
+  position: {
+    spacingLeft: 0,
+    marginRight: 0
+  },
+  style: {
+    width: '100%'
+  },
+  title: {
+    text: 'Hourly power consumption'
+  },
+  subtitle: {
+    text: 'Actual electricity delivered'
+  },
+  xAxis: {
+    crosshair: true,
+    title: {
+      text: 'Hour'
+    },
+    minTickInterval: 4
+  },
+  yAxis: {
+    title: {
+      text: 'in kW'
+    },
+    min: 0
+  },
+  tooltip: {
+    headerFormat: '<span style="font-size:10px">{point.key}</span><table>',
+    pointFormat: '<tr><td style="color:{series.color};padding:0">{series.name}: </td>' +
+      '<td style="padding:0"><b>{point.y:.1f}</b></td></tr>',
+    footerFormat: '</table>',
+    shared: true,
+    useHTML: true
+  },
+  plotOptions: {
+    column: {
+      pointPadding: 0,
+      borderWidth: 0,
+      groupPadding: 0,
+      shadow: false
+    }
+  },
+  series: [{
+    name: 'Hourly power consumption',
+    data: <%= series1 %>
+  }],
+  func: function(chart) {
+    $timeout(function() {
+      graph.reflow();
+      //The below is an event that will trigger all instances of charts to reflow
+      //$scope.$broadcast('highchartsng.reflow');
+    }, 0)
+  }
+});
+
+</script>
