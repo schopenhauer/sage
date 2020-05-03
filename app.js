@@ -16,7 +16,7 @@ let i = 0
 let go = false
 let decryptedData, previousHexData
 
-mongoose.connect(config.database, {useNewUrlParser: true})
+mongoose.connect(config.database, {useNewUrlParser: true, useUnifiedTopology: true})
   .catch(err => {
     log.warn(err.message);
 });
