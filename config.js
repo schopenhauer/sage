@@ -1,9 +1,9 @@
-require('dotenv').config()
+require('dotenv').config();
 
-const path = require('path')
+const path = require('path');
 
 module.exports = {
-  
+
   port: process.env.PORT || 3000,
 
   device: process.env.DEVICE || '/dev/ttyUSB0',
@@ -18,4 +18,4 @@ module.exports = {
 
   cutoff: 40,
 
-}
+};

@@ -8,6 +8,6 @@ module.exports = {
     hexData: { type: String },
     decryptedData: { type: String },
     parsedData: { type: Object },
-  })
+  }),
 
-}
+};
