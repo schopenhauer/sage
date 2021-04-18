@@ -6,17 +6,25 @@ const bunyan = require('bunyan');
 const bformat = require('bunyan-format');
 
 const formatOut = bformat({ outputMode: 'short' });
-const log = bunyan.createLogger({ name: 'app', stream: formatOut, level: 'debug' });
+const log = bunyan.createLogger({ name: 'app', stream: formatOut, level: 'info' });
 const mongoose = require('mongoose');
 const parser = require('dsmr-parser');
 const models = require('./models');
 const config = require('./config');
 const utils = require('./utils');
+const DSMDatagram = require('./dsmr_datagram');
 
-let i = 0;
+let packetCnt = 0;
 let go = false;
-let decryptedData; let
-  previousHexData;
+let decryptedData; 
+let previousHexData;
+
+const startByte = 0xdb;
+
+const headerLength = 14; 
+
+// DB 08 53 41  47 35 00 00  B3 20 82 01  F2 30
+// 219 8 83 65  71 53 0  0            1   242 48
 
 mongoose.connect(config.database, { useNewUrlParser: true, useUnifiedTopology: true })
   .catch((err) => {
@@ -32,92 +40,106 @@ port.on('error', (err) => {
   log.error('Serial port: ', err.message);
 });
 
-port.on('data', (data) => {
-  i++;
 
-  let hexData = data.toString('hex');
-  log.debug(`Received data ${i}:`, `${utils.truncate(hexData)} / size: ${hexData.length}`);
+const expectedHeader = [0xdb, 0x08, 0x53, 0x41, 0x47];
 
-  switch (data.length) {
-    case 496:
-      log.trace('Received only first data chunk, waiting for second chunk');
-      previousHexData = hexData;
-      go = false;
-      break;
-    case 151:
-      log.trace('Merge data received and go to decryption');
-      if (previousHexData) {
-        hexData = previousHexData + hexData;
-        previousHexData = null;
-        go = true;
-      } else {
-        go = false;
-      }
-      break;
-    case 1294:
-      go = true;
-      break;
-    default:
-      log.warn(`Unknown data length (${data.length}), ignoring data`);
-      go = false;
+
+
+function DecryptDatagram(datagram, key, auth_data) 
+{
+
+  iv = datagram.IV();  //utils.hex2bin(system_title + frame_counter);
+  auth_tag = datagram.GCMTag; //utils.hex2bin(gcm_tag);
+  cipher = datagram.CipherText; //utils.hex2bin(cipher_text);
+
+  // log.debug(`${datagram.IV().toString('hex')}`)
+
+  const decipher = crypto.createDecipheriv('aes-128-gcm', key, iv);
+  decipher.setAAD(auth_data);
+  decipher.setAuthTag(auth_tag);
+  decryptedData = decipher.update(cipher, 'hex', 'utf8') + decipher.final('utf8');
+
+  log.debug(`Decrypted data:`, utils.truncate(decryptedData));
+
+  return decryptedData;
+}
+
+let key = Buffer.from(config.encryption_key, 'hex');
+let auth_data = Buffer.from(config.additional_auth_data, 'hex');
+
+port.on('data', (sdata) => {
+  packetCnt++;
+  let idx = -1;
+  log.debug(`Received data ${packetCnt}:`, `${utils.truncate(sdata.toString('hex'))} / size: ${sdata.length}`);
+
+  if (previousHexData != null) {
+    data = Buffer.concat([previousHexData, sdata]);
+  } else {
+    data = sdata;
   }
-
-  if (go) {
-    try {
-      start_byte = hexData.substr(0, 2);
-      valid_start_byte_found = start_byte == 'db';
-
-      if (valid_start_byte_found) {
-        system_title_length = hexData.substr(2, 1 * 2); // 2 bytes
-        system_title = hexData.substr(4, 8 * 2); // 8 bytes
-        subsequent_bytes = hexData.substr(22, 2 * 2); // 2 bytes
-        frame_counter = hexData.substr(28, 4 * 2); // 8 bytes
-        cipher_text = hexData.substr(36, hexData.length - 12 * 2 - 36); // 12 bytes
-        gcm_tag = hexData.substr(hexData.length - 12 * 2, 12 * 2); // 12 bytes
-
-        log.trace('data length:', hexData.length, 'bytes');
-        log.trace('start_byte:', start_byte);
-        log.trace('system_title_length:', system_title_length);
-        log.trace('system_title:', system_title);
-        log.trace('subsequent_bytes:', subsequent_bytes);
-        log.trace('frame_counter:', frame_counter);
-        log.trace('cipher_text:', cipher_text);
-        log.trace('gcm_tag:', gcm_tag);
-
-        key = utils.hex2bin(config.encryption_key);
-        iv = utils.hex2bin(system_title + frame_counter);
-        auth_data = utils.hex2bin(config.additional_auth_data);
-        auth_tag = utils.hex2bin(gcm_tag);
-        cipher = utils.hex2bin(cipher_text);
-
-        const decipher = crypto.createDecipheriv('aes-128-gcm', key, iv);
-        decipher.setAAD(auth_data);
-        decipher.setAuthTag(auth_tag);
-        decryptedData = decipher.update(cipher, 'hex', 'utf8') + decipher.final('utf8');
-
-        log.info(`Decrypted data ${i}:`, utils.truncate(decryptedData));
+  // search for datagram begin
+  // for(let i = 0; i < data.length; i++) {
+  while(data.length > 0) {
+    let match = false;
+    idx = idx + 1;
+    if (data[0] == expectedHeader[0]) {
+      match = true;
+      for (let j = 1; j < expectedHeader.length; j++) {
+        if (data[j] != expectedHeader[j]) {
+          match = false;
+          break;
+        }
       }
+    }
+    if (data[0] == expectedHeader[0] && !match) {
+      log.debug(`ignoring data after startbyte found at ${idx}`);
+      
+    }
+    if (!match) {
+      // sequence not as expected - consume byte and go along
+      data = data.subarray(1);
+      continue;
+    }
+
+    // we found the start of a datagram - try reading the datagram
+    let datagram = DSMDatagram.Read(data);
+    if (datagram == null) {
+      log.debug('reading datagram failed - waiting for more data...');
+      // previousHexData = data;
+      break;
+    }
+
+    log.debug(`Datagram header: ${datagram.HeaderToString()}`);
+    log.debug(`FrameCounter: ${datagram.FrameCounter.toString('hex')}`)        
+    log.debug(`CipherText: ${utils.truncate(datagram.CipherText.toString('hex'))}`)        
+    log.debug(`GCM Tag: ${datagram.GCMTag.toString('hex')}`)
+
+    try {
+      let decrypted = DecryptDatagram(datagram, key, auth_data);
+      log.info(`Decrypted data: ${packetCnt} ${decrypted}`);
 
       if (config.storeDatabase) {
         const telegram = new models.Telegram({
-          hexSize: hexData.length,
-          hexData,
-          decryptedData,
+          hexSize: datagram.MessageLength,
+          hexData: data.subarray(0, datagram.MessageLength).toString('hex'),
+          decryptedData: decryptedData,
           parsedData: parser.parse(decryptedData),
         });
-        telegram.save().then(() => log.trace('Telegram saved to database:', telegram._id));
+        telegram.save().then(() => log.info('Telegram saved to database:', telegram._id));
       }
 
-      if (config.storeLocalFiles) {
-        const timestamp = Date.now();
-        const file = path.join(config.storeLocalDirectory, `${timestamp}.hex`);
-        fs.writeFile(file, hexData, (err) => {
-          if (err) log.error(err);
-          log.trace('Raw data saved to file:', file);
-        });
-      }
+      // let parsedMsg = parser.parse(decryptedData);
+      // log.info(parsedMsg);
+
     } catch (err) {
       log.error(err);
-    }
+    } 
+    // successfully read a datagram - so consume bytes from data
+    data = data.subarray(datagram.MessageLength);
+   
+  }
+  previousHexData = data;
+  if (previousHexData != null) {
+    log.trace(`remaining data: ${previousHexData.length} ${previousHexData.toString('hex')}`)
   }
 });
