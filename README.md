@@ -8,7 +8,7 @@ According to [Enovos](https://www.enovos.lu/enovos_en/individuals/electricity/Sm
 
 * [Sagemcom](https://www.sagemcom.com/) T210-D smart meter
 * [P1 smart meter cable](https://www.aliexpress.com/item/FTDI-USB-Cable-for-P1-Port-Dutch-Slimme-Meter-Kamstrup-162-382-EN351-Landis-Gyr-E350/32945225256.html) (Dutch: _slimme meter kabel_), i.e. RJ-11 (phone connector) to USB
-* P1 decryption key obtained from [Creos](mailto:customer.care@creos.net), [Diekirch](smarty@diekirch.lu), [Ettelbrück](sive@ettelbruck.lu), [Electris](smarty@electris.lu) (Mersch) or [Südstroum](backoffice@sudstroum.lu) (Esch-sur-Alzette)
+* P1 decryption key obtained from [Creos](mailto:customer.care@creos.net), [Diekirch](mailto:smarty@diekirch.lu), [Ettelbrück](mailto:sive@ettelbruck.lu), [Electris](mailto:smarty@electris.lu) (Mersch) or [Südstroum](mailto:backoffice@sudstroum.lu) (Esch-sur-Alzette)
 * Node.js (e.g. running on Raspberry Pi)
 * MongoDB instance (optional)
 
@@ -45,7 +45,7 @@ Simple, run the app:
 node web.js
 ```
 
-<img src="https://github.com/schopenhauer/sage/raw/master/docs/daily_power_consumption.png" width="650">
+<img src="https://github.com/schopenhauer/sage/raw/main/docs/daily_power_consumption.png" width="650">
 
 
 ## Data structure
@@ -54,7 +54,7 @@ node web.js
 
 The smart meter sends data (647 bytes) with the below structure every 10 seconds.
 
-<img src="https://github.com/schopenhauer/sage/raw/master/docs/datagram.png">
+<img src="https://github.com/schopenhauer/sage/raw/main/docs/datagram.png">
 
 * Start byte: `0xDB` (1 byte)
 * System title length: `0x08` (1 byte)
@@ -75,13 +75,13 @@ The data is encrypted using [AES-128-GCM](http://csrc.nist.gov/publications/nist
 
 ### Telegram structure
 
-Please refer to the documentation of OBIS codes [here](https://github.com/schopenhauer/sage/raw/master/docs/OBIS-codes.xlsx).
+Please refer to the documentation of OBIS codes [here](https://github.com/schopenhauer/sage/raw/main/docs/OBIS-codes.xlsx).
 
 ## Tested equipment
 
 You need to connect your computer/Raspberry Pi to the _Customer Port_ (Port P1) using the P1 smart meter cable. The technical specifications are available [here](https://www.electris.lu/files/Dokumente_und_Formulare/P1PortSpecification.pdf), [here](http://www.sagemcom.com/smart-city/smart-meter/electricity/smart-metering-multi-energy/t210-d-multi-energies-tri-phase-direct-connexion/) and [here](https://www.sibelga.be/en/connections-and-meters/smart-ready-meters/types-of-smart-ready-meters/detail/t210d).
 
-<img src="https://github.com/schopenhauer/sage/raw/master/docs/sagemcom.png">
+<img src="https://github.com/schopenhauer/sage/raw/main/docs/sagemcom.png">
 
 ## Credits
 
