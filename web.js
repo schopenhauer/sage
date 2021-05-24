@@ -32,6 +32,7 @@ router.get('/', async (ctx, next) => {
   const telegrams = await models.Telegram.find({}).limit(10).sort({ timestamp: -1 });
   let series1 = [];
   let series2 = [];
+  let series3 = [];
 
   const s1 = await models.Telegram.aggregate(
     [
@@ -85,6 +86,30 @@ router.get('/', async (ctx, next) => {
     ]);
   }
   series2 = JSON.stringify(series2);
+
+  // const s3 = await models.Telegram.aggregate(
+  //   [
+  //     {
+  //       $group: {
+  //         _id: {
+  //           year: { $year: '$timestamp' },
+  //           month: { $month: '$timestamp' },
+  //           day: { $dayOfMonth: '$timestamp' },
+  //           hour: { $hour: '$timestamp' },
+  //           minute: { $minute: '$timestamp' }
+  //         },
+  //         avgActElectricitryDelivered: { $avg: '$parsedData.objects.actual electricity power delivered' },
+  //     },
+  //   }]
+  //   ).exec();
+  // for (const item of s3) {
+  //   series3.push([
+  //     Date.UTC(item._id.year, item._id.month, item._id.day, item._id.hour, item._id.minute),
+  //     item.max - item.min,
+  //   ]);
+  // }
+  // series2 = JSON.stringify(series2);
+  
 
   await ctx.render('dashboard', {
     telegrams,

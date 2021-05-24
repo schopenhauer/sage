@@ -7,9 +7,8 @@ const bformat = require('bunyan-format');
 
 const formatOut = bformat({ outputMode: 'short' });
 const log = bunyan.createLogger({ name: 'app', stream: formatOut, level: 'info' });
-const mongoose = require('mongoose');
-const parser = require('dsmr-parser');
-const models = require('./models');
+const Influx = require('influx');
+const parser = require('./dsmr-parser');
 const config = require('./config');
 const utils = require('./utils');
 const DSMDatagram = require('./dsmr_datagram');
@@ -20,16 +19,29 @@ let decryptedData;
 let previousHexData;
 
 const startByte = 0xdb;
-
 const headerLength = 14; 
 
-// DB 08 53 41  47 35 00 00  B3 20 82 01  F2 30
-// 219 8 83 65  71 53 0  0            1   242 48
-
-mongoose.connect(config.database, { useNewUrlParser: true, useUnifiedTopology: true })
-  .catch((err) => {
-    log.warn(err.message);
+let influx = null;
+if (config.storeInfluxDB) {
+  let dbFields = Object.assign({}, {"dsmr_version": Influx.FieldType.STRING }, ...Object.keys(config.influx_database_mapping).map((key) => ({[config.influx_database_mapping[key]]: Influx.FieldType.FLOAT })));
+  influx = new Influx.InfluxDB({
+    host: config.influxDBHost,
+    port: config.influxDBPort,
+    database: config.influxDBName,
+    schema: [
+    {
+      measurement: config.influxDBMeasurement,
+      fields: dbFields,
+      tags: [ 'identifier' ]
+    }]
   });
+  influx.getDatabaseNames()
+   .then(names => {
+    if (!names.includes(config.influxDBMeasurement)) {
+      return influx.createDatabase(config.influxDBMeasurement);
+    }
+   });
+}
 
 log.info('Listening to device:', config.device);
 const port = new SerialPort(config.device, {
@@ -43,16 +55,12 @@ port.on('error', (err) => {
 
 const expectedHeader = [0xdb, 0x08, 0x53, 0x41, 0x47];
 
-
-
 function DecryptDatagram(datagram, key, auth_data) 
 {
 
-  iv = datagram.IV();  //utils.hex2bin(system_title + frame_counter);
-  auth_tag = datagram.GCMTag; //utils.hex2bin(gcm_tag);
-  cipher = datagram.CipherText; //utils.hex2bin(cipher_text);
-
-  // log.debug(`${datagram.IV().toString('hex')}`)
+  iv = datagram.IV();
+  auth_tag = datagram.GCMTag;
+  cipher = datagram.CipherText;
 
   const decipher = crypto.createDecipheriv('aes-128-gcm', key, iv);
   decipher.setAAD(auth_data);
@@ -77,8 +85,7 @@ port.on('data', (sdata) => {
   } else {
     data = sdata;
   }
-  // search for datagram begin
-  // for(let i = 0; i < data.length; i++) {
+
   while(data.length > 0) {
     let match = false;
     idx = idx + 1;
@@ -118,18 +125,42 @@ port.on('data', (sdata) => {
       let decrypted = DecryptDatagram(datagram, key, auth_data);
       log.info(`Decrypted data: ${packetCnt} ${decrypted}`);
 
-      if (config.storeDatabase) {
+      if (config.storeInfluxDB) {
+        const telegram = parser.parse(decryptedData, parser.ParseTypes.NumericIDs | parser.ParseTypes.ReadUnits);
+
+        let timestamp = telegram.objects.timestamp;
+        delete telegram.objects.timestamp;
+        let fields = {};
+        Object.keys(config.influx_database_mapping).forEach((key) => { 
+          if (Object.keys(telegram.objects).includes(key)) { 
+            fields[config.influx_database_mapping[key]] = telegram.objects[key].value;
+          }
+        });
+        influx.writePoints([{
+          measurement: config.influxDBMeasurement,
+          fields: fields,
+          tags: { identifier: telegram.identifier },
+          timestamp: timestamp.value //* 1e6
+        }], {
+          database: config.influxDBName,
+          precision: 's',
+        })
+        .then(() => log.info("Data saved to DB"))
+        .catch(error => log.error(error));
+      }
+
+      if (config.storeMongoDB) {
         const telegram = new models.Telegram({
           hexSize: datagram.MessageLength,
           hexData: data.subarray(0, datagram.MessageLength).toString('hex'),
           decryptedData: decryptedData,
           parsedData: parser.parse(decryptedData),
         });
-        telegram.save().then(() => log.info('Telegram saved to database:', telegram._id));
-      }
+        telegram.save()
+        .then(() => log.info('Telegram saved to database:', telegram._id))
+        .catch(error => log.error(error));
 
-      // let parsedMsg = parser.parse(decryptedData);
-      // log.info(parsedMsg);
+      }
 
     } catch (err) {
       log.error(err);
