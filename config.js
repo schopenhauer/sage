@@ -37,7 +37,7 @@ module.exports = {
 	  "1-0:3.8.0": "reactive_energy_delivered_total",
 	  "1-0:3.8.1": "reactive_energy_delivered_t1",
 	  "1-0:3.8.2": "reactive_energy_delivered_t2",
-	  "1-0:3.7.0": "reactive_instant_power_received",
+	  "1-0:3.7.0": "reactive_instant_power_delivered",
 	  "1-0:4.8.0": "reacive_energy_received_total",
 	  "1-0:4.8.1": "reacive_energy_received_t1",
 	  "1-0:4.8.2": "reacive_energy_received_t2",
