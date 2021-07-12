@@ -1,0 +1,41 @@
+{
+  "name": "sage",
+  "version": "1.0.0",
+  "description": "Smart meter reader",
+  "main": "app.js",
+  "scripts": {
+    "start": "nodemon app.js",
+    "parse": "node parser.js",
+    "socat-proxy": "socat -d -d /dev/ttyUSB0,raw,echo=0 tcp-listen:2001,reuseaddr",
+    "socat-listen": "sudo socat -d -d PTY,raw,echo=0,link=/dev/ttyVUSB0 tcp:192.168.178.80:2001",
+    "connect": "dmesg | grep tty",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "schopenhauer",
+  "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/schopenhauer/sage.git"
+  },
+  "dependencies": {
+    "bunyan": "^1.8.15",
+    "bunyan-format": "^0.2.1",
+    "dotenv": "^8.2.0",
+    "dsmr-parser": "^2.1.1",
+    "ejs": "^3.1.6",
+    "influx": "^5.9.0",
+    "koa": "^2.13.1",
+    "koa-route": "^3.2.0",
+    "koa-router": "^10.0.0",
+    "koa-static": "^5.0.0",
+    "koa-views": "^7.0.1",
+    "moment": "^2.29.1",
+    "mongoose": "^5.12.4",
+    "serialport": "^9.0.7",
+    "voca": "^1.4.0",
+    "winston": "^3.3.3"
+  },
+  "devDependencies": {
+    "eslint": "^7.20.0"
+  }
+}
