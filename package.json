@@ -20,22 +20,22 @@
   "dependencies": {
     "bunyan": "^1.8.15",
     "bunyan-format": "^0.2.1",
-    "dotenv": "^8.2.0",
-    "dsmr-parser": "^2.1.1",
+    "dotenv": "^10.0.0",
+    "dsmr-parser": "^2.1.2",
     "ejs": "^3.1.6",
-    "influx": "^5.9.0",
+    "influx": "^5.9.2",
     "koa": "^2.13.1",
     "koa-route": "^3.2.0",
     "koa-router": "^10.0.0",
     "koa-static": "^5.0.0",
     "koa-views": "^7.0.1",
     "moment": "^2.29.1",
-    "mongoose": "^5.12.4",
-    "serialport": "^9.0.7",
+    "mongoose": "^5.13.2",
+    "serialport": "^9.2.0",
     "voca": "^1.4.0",
     "winston": "^3.3.3"
   },
   "devDependencies": {
-    "eslint": "^7.20.0"
+    "eslint": "^7.30.0"
   }
 }
