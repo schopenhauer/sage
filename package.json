@@ -29,7 +29,7 @@
     "koa-router": "^10.0.0",
     "koa-static": "^5.0.0",
     "koa-views": "^7.0.1",
-    "moment": "^2.29.1",
+    "moment": "^2.29.2",
     "mongoose": "^5.13.2",
     "serialport": "^9.2.0",
     "voca": "^1.4.0",
